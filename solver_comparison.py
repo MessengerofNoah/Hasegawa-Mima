@@ -23,8 +23,9 @@ k2 = KX**2 + KY**2
 A = -(1 + k2)
 
 # Initial condition
-# phi0 = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / (0.2)**2)
-phi0 = np.sin(X) * np.sin(Y)
+phi0 = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / (1)**2)
+# phi0 = np.sin(2*X) * np.sin(3*Y)
+# phi0 = np.sin(1.3*X) * np.sin(1.7*Y)
 
 # Time array
 times = [0.0, tmax/3, 2*tmax/3, tmax]
@@ -113,3 +114,23 @@ for idx, t in enumerate(times):
 # Add a single colorbar for all plots, placed to the right
 cbar = fig.colorbar(pcm2, ax=axes, location='right', shrink=0.8, label='Field value', pad=0.02)
 plt.show()
+
+# --- Compute and print error norms between methods ---
+
+l2_norms = []
+linf_norms = []
+
+for idx in range(len(times)):
+    spectral = snapshots_spectral[idx]
+    fd = snapshots_fd[idx]
+    diff = spectral - fd
+    l2 = np.sqrt(np.mean(diff**2))
+    linf = np.max(np.abs(diff))
+    l2_norms.append(l2)
+    linf_norms.append(linf)
+
+mean_l2 = np.mean(l2_norms)
+mean_linf = np.mean(linf_norms)
+
+print(f"Mean L2 norm between methods: {mean_l2:.6e}")
+print(f"Mean L-infinity norm between methods: {mean_linf:.6e}")

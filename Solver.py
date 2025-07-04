@@ -18,7 +18,9 @@ y = np.linspace(0, L, Ny, endpoint=False)
 X, Y = np.meshgrid(x, y)
 
 # Initial condition: Gaussian blob
-phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / 0.2**2)
+# phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / 0.2**2)
+# phi = np.sin(1*X) * ((np.abs(Y - L/2) < 0.1).astype(float))
+phi = np.sin(3.2*X) * np.sin(2.7*Y)
 
 # Precompute wavenumbers for FFT inversion
 kx = np.fft.fftfreq(Nx, d=dx)*2*np.pi
@@ -36,7 +38,7 @@ title = ax.set_title("")
 # Simulation: store all phi snapshots
 nframes = int(tmax / dt) + 1
 phi_snapshots = []
-phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / 0.2**2)  # reset initial condition
+# phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2) / 0.2**2)  # reset initial condition
 
 for frame in range(nframes):
     t = frame * dt
