@@ -3,20 +3,26 @@ import matplotlib.pyplot as plt
 from scipy.sparse import diags, kron, eye, linalg
 
 # Parameters
-L = 2*np.pi
+L = 2*np.pi*10
 N = 256
 dx = L / N
 dy = L / N
-dt = 0.01
-tmax = 10.0
-v_star = 2.0
+dt = 5e1
+tmax = 5e2
+v_star = 2e-2
 
 x = np.linspace(0, L, N, endpoint=False)
 y = np.linspace(0, L, N, endpoint=False)
 X, Y = np.meshgrid(x, y)
 
 # Initial condition
-phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2)/0.2**2)
+phi = np.exp(-((X - L/2)**2 + (Y - L/2)**2)/2**2)
+
+# Initial condition: symmetric dipole with weak overlap
+# phi = (
+#     np.exp(-((X - (L/2 - 0.12))**2 + (Y - L/2)**2) / 0.09**2)
+#     - np.exp(-((X - (L/2 + 0.12))**2 + (Y - L/2)**2) / 0.09**2)
+# )
 
 # Laplacian operator in 1D with periodic BC
 e = np.ones(N)
@@ -75,6 +81,17 @@ for idx, phi_snap in enumerate(phi_snapshots):
     plt.subplot(1,4,idx+1)
     plt.pcolormesh(X,Y,phi_snap,cmap='RdBu', shading='auto')
     plt.title(f't = {output_times[idx]:.2f}')
-    plt.axis('off')
+    
+    # Show x and y axes with labels
+    plt.xlabel('x')
+    plt.ylabel('y')
+    
+    # Optional: Add a colorbar
+    plt.colorbar(label='φ')
+    
+    # Optional: Set nice tick spacing
+    plt.xticks(np.linspace(0, L, 5))
+    plt.yticks(np.linspace(0, L, 5))
+
 plt.tight_layout()
 plt.show()

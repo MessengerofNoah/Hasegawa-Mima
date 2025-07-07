@@ -2,22 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags, kron, eye, linalg
 
-# Parameters
-L = 2*np.pi
-N = 128
+# Parameters (updated to match solver_inversion.py)
+L = 2*np.pi*10
+N = 256
 dx = L / N
 dy = L / N
-dt = 0.01
-tmax = 10.0
-v_star = 2.0
+dt = 5e-1
+tmax = 1e3
+v_star = 2e-2
 
 x = np.linspace(0, L, N, endpoint=False)
 y = np.linspace(0, L, N, endpoint=False)
 X, Y = np.meshgrid(x, y)
 output_times = [0.0, tmax/3, 2*tmax/3, tmax]
 
-# Initial condition
-phi0 = np.exp(-((X - L/2)**2 + (Y - L/2)**2)/0.2**2)
+# Initial condition (updated to match solver_inversion.py)
+phi0 = np.exp(-((X - L/2)**2 + (Y - L/2)**2)/2**2)
 
 # -------- Method 1: FFT Spectral Method --------
 phi_hat0 = np.fft.fft2(phi0)
@@ -70,6 +70,14 @@ while t <= tmax + 1e-8:
 vmin = min(np.min(s) for s in snapshots_fft + snapshots_sparse)
 vmax = max(np.max(s) for s in snapshots_fft + snapshots_sparse)
 
+# Calculate min and max for difference plots to use consistent colormap
+diff_snapshots = [snapshots_fft[i] - snapshots_sparse[i] for i in range(len(output_times))]
+diff_min = min(np.min(d) for d in diff_snapshots)
+diff_max = max(np.max(d) for d in diff_snapshots)
+# Make the colormap symmetric around zero
+diff_abs_max = max(abs(diff_min), abs(diff_max))
+diff_vmin, diff_vmax = -diff_abs_max, diff_abs_max
+
 l2_norms = []
 linf_norms = []
 
@@ -77,26 +85,43 @@ plt.figure(figsize=(12, 4*len(output_times)))
 for idx, t in enumerate(output_times):
     phi_fft = snapshots_fft[idx]
     phi_sparse = snapshots_sparse[idx]
-    diff = phi_fft - phi_sparse
+    # Use the pre-computed difference instead of recalculating
+    diff = diff_snapshots[idx]
     l2 = np.sqrt(np.mean(diff**2))
     linf = np.max(np.abs(diff))
     l2_norms.append(l2)
     linf_norms.append(linf)
 
-    plt.subplot(len(output_times), 3, idx*3+1)
-    plt.pcolormesh(X, Y, phi_fft, cmap='RdBu', shading='auto', vmin=vmin, vmax=vmax)
+    # First column: FFT Spectral
+    ax1 = plt.subplot(len(output_times), 3, idx*3+1)
+    im1 = plt.pcolormesh(X, Y, phi_fft, cmap='RdBu', shading='auto', vmin=vmin, vmax=vmax)
     plt.title(f'FFT Spectral t={t:.2f}')
-    plt.axis('off')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    
+    # Add colorbar for FFT plot in each row
+    plt.colorbar(im1, label='φ')
 
-    plt.subplot(len(output_times), 3, idx*3+2)
-    plt.pcolormesh(X, Y, phi_sparse, cmap='RdBu', shading='auto', vmin=vmin, vmax=vmax)
+    # Second column: Sparse Inversion
+    ax2 = plt.subplot(len(output_times), 3, idx*3+2)
+    im2 = plt.pcolormesh(X, Y, phi_sparse, cmap='RdBu', shading='auto', vmin=vmin, vmax=vmax)
     plt.title(f'Sparse Inversion t={t:.2f}')
-    plt.axis('off')
+    plt.xlabel('x')
+    plt.ylabel('y')
 
-    plt.subplot(len(output_times), 3, idx*3+3)
-    plt.pcolormesh(X, Y, diff, cmap='bwr', shading='auto')
+    # Add colorbar for Sparse Matrix plot in each row
+    plt.colorbar(im2, label='φ')
+
+    # Third column: Difference
+    ax3 = plt.subplot(len(output_times), 3, idx*3+3)
+    im3 = plt.pcolormesh(X, Y, diff, cmap='bwr', shading='auto', 
+                         vmin=diff_vmin, vmax=diff_vmax)
     plt.title(f'Difference\nL2={l2:.2e}, L∞={linf:.2e}')
-    plt.axis('off')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    
+    # Add colorbar for difference plot in each row
+    plt.colorbar(im3, label='Δφ')
 
 plt.tight_layout()
 plt.show()
