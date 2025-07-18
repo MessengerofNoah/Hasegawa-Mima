@@ -5,13 +5,13 @@ from numpy.fft import fft2, ifft2, fftfreq, fftshift
 import time
 
 # ---------------- Parameters ----------------
-N = 255                # grid points
+N = 128                # grid points
 L = 2 * np.pi * 10      # domain size
 dt = 1e0               # time step
-tmax = 1e4             # max time
-v_star = 2e-2            # diamagnetic drift velocity
+tmax = 5e3             # max time
+v_star = 2e-2            # diamagnetic drift velocity, of order e-2
 
-dealias_ratio = 2/3
+dealias_ratio = 2/3 # stronger dealiasing with smaller dealias_ratio
 
 # ---------------- Grid ----------------
 x = np.linspace(0, L, N, endpoint=False)
@@ -41,10 +41,15 @@ mask_y = dealias_mask(N)
 dealias = np.outer(mask_y, mask_x)
 
 # ---------------- Initial Condition ----------------
-Dx = 5
-phi0 = 1e-1 * np.exp(-((X - L/2)**2 + (Y - L/2)**2) / (2*Dx**2))
-phi0_hat = fft2(phi0)
-q_hat = A_fft * phi0_hat  # Poisson equation in spectral space
+Dx = 5 # spatial scale of initial condition # should be larger than 1
+phi0 = 1e0 * np.exp(-((X - L/2)**2 + (Y - L/2)**2) / (2*Dx**2)) #monopole, magnitude: 1e-1
+# phi0 = 1e-1* np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*5**2))*((x-L/2)/Dx) # dipole
+# phi0 = 1e-1* np.sin(0.2*X) * np.sin(0.3*Y) # sinusoidal
+# phi0 = 1e-1* np.sin(0.2*X) * np.exp(-((Y - L/2)**2)/(2*Dx**2)) # sinusoidal in x and gaussian in y
+# phi0 = 1e-1* np.exp(-((X - L/2)**2)/(2*Dx**2)) * np.sin(0.2*Y) # gaussian in x and sinusoidal in y
+
+phi0_hat = fft2(phi0) 
+q_hat = A_fft * phi0_hat  # Poisson equation in spectral space # q=(\nabla^2-1)\phi
 
 def poisson_bracket_dealiased(phi_hat, q_hat):
     """

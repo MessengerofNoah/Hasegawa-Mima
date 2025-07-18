@@ -11,26 +11,26 @@ dx = L / N
 dy = L / N
 dt = 2e1
 tmax = 1e4
-v_star = 2e-2
+v_star = 2e-2 # of order e-2
 
 x = np.linspace(0, L, N, endpoint=False)
 y = np.linspace(0, L, N, endpoint=False)
 X, Y = np.meshgrid(x, y)
-output_times = [0.0, tmax/3, 2*tmax/3, tmax]
+output_times = [0.0, tmax/3, 2*tmax/3, tmax] 
 
 # Initial condition (updated to match solver_inversion.py)
-Dx = 5
-phi0 = 1e-1 * np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*Dx**2))
-# phi0 = 2* np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*5**2))*((x-L/2)/Dx)
-# phi0 = 2* np.sin(0.2*X) * np.sin(0.3*Y)
-# phi0 = 2* np.sin(0.2*X) * np.exp(-((Y - L/2)**2)/(2*Dx**2))
-# phi0 = 2* np.exp(-((X - L/2)**2)/(2*Dx**2)) * np.sin(0.2*Y)
+Dx = 5 # spatial scale of initial condition, should be larger than 1
+phi0 = 1e-1 * np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*Dx**2)) # monopole magnitude: 1e-1
+# phi0 = 1e-1* np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*5**2))*((x-L/2)/Dx) # dipole
+# phi0 = 1e-1* np.sin(0.2*X) * np.sin(0.3*Y) # sinusoidal
+# phi0 = 1e-1* np.sin(0.2*X) * np.exp(-((Y - L/2)**2)/(2*Dx**2)) # sinusoidal in x and gaussian in y
+# phi0 = 1e-1* np.exp(-((X - L/2)**2)/(2*Dx**2)) * np.sin(0.2*Y) # gaussian in x and sinusoidal in y
 
 # -------- Method 2: Sparse Matrix Iterative Inversion with RK4 --------
 # Run this first to get actual output times
 start_time_sparse = time.time()
 
-# Construct Helmholtz operator
+# Construct Helmholtz operator with perriodic BC
 e = np.ones(N)
 L1D = diags([e, -2*e, e], offsets=[-1,0,1], shape=(N,N)).tolil()
 L1D[0,-1] = 1
@@ -41,7 +41,7 @@ A_sparse = L2D - eye(N*N)
 
 # Use initial condition directly for t=0 snapshot
 phi_vec = phi0.ravel()
-q_vec = A_sparse @ phi_vec
+q_vec = A_sparse @ phi_vec # q=(\nabla^2-1)\phi
 snapshots_sparse = []
 snapshots_sparse.append(phi0.copy())  # Store initial condition as first snapshot
 output_idx = 1  # Start from second output time
@@ -59,7 +59,7 @@ def compute_rhs(q):
     dphi_dy /= (2*dy)
     
     # Return RHS
-    return -v_star * dphi_dy.ravel()
+    return v_star * dphi_dy.ravel()
 
 # Time stepping
 t = dt  # Start from first time step
@@ -106,7 +106,7 @@ A_fft = -(1 + k2)
 snapshots_fft = []
 # print("Evaluating FFT at actual times:", actual_snapshot_times)
 for t in actual_snapshot_times:
-    phase = np.exp(-1j * v_star * KY * t / A_fft)
+    phase = np.exp(1j * v_star * KY * t / A_fft)
     phi_hat_t = phi_hat0 * phase
     phi_t = np.real(np.fft.ifft2(phi_hat_t))
     snapshots_fft.append(phi_t)
