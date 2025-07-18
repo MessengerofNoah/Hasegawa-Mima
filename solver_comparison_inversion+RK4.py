@@ -20,11 +20,11 @@ output_times = [0.0, tmax/3, 2*tmax/3, tmax]
 
 # Initial condition (updated to match solver_inversion.py)
 Dx = 5
-# phi0 = 2* np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*Dx**2))
+phi0 = 1e-1 * np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*Dx**2))
 # phi0 = 2* np.exp(-((X - L/2)**2 + (Y - L/2)**2)/(2*5**2))*((x-L/2)/Dx)
 # phi0 = 2* np.sin(0.2*X) * np.sin(0.3*Y)
 # phi0 = 2* np.sin(0.2*X) * np.exp(-((Y - L/2)**2)/(2*Dx**2))
-phi0 = 2* np.exp(-((X - L/2)**2)/(2*Dx**2)) * np.sin(0.2*Y)
+# phi0 = 2* np.exp(-((X - L/2)**2)/(2*Dx**2)) * np.sin(0.2*Y)
 
 # -------- Method 2: Sparse Matrix Iterative Inversion with RK4 --------
 # Run this first to get actual output times
@@ -67,13 +67,13 @@ actual_snapshot_times = [0.0]  # First snapshot is at t=0
 
 while t <= tmax + 1e-8:
     # RK4 integration step
-    k1 = compute_rhs(q_vec)
-    k2 = compute_rhs(q_vec + 0.5*dt*k1)
-    k3 = compute_rhs(q_vec + 0.5*dt*k2)
-    k4 = compute_rhs(q_vec + dt*k3)
+    r1 = compute_rhs(q_vec)
+    r2 = compute_rhs(q_vec + 0.5*dt*r1)
+    r3 = compute_rhs(q_vec + 0.5*dt*r2)
+    r4 = compute_rhs(q_vec + dt*r3)
     
     # Update q using RK4 formula
-    q_vec = q_vec + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+    q_vec = q_vec + (dt/6)*(r1 + 2*r2 + 2*r3 + r4)
     
     # Update phi from new q
     phi_vec, info = linalg.cg(A_sparse, q_vec, atol=1e-8, maxiter=500)
